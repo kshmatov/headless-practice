@@ -1,10 +1,8 @@
-package main
+package commander
 
 import (
-	"flag"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/raff/godet"
 )
@@ -12,22 +10,25 @@ import (
 type handler func(godet.Params)
 type handlers map[string]handler
 
-type ChromeConnection struct {
+// chromeConnection is connection to running Chrome instance
+type chromeConnection struct {
 	remote    *godet.RemoteDebugger
 	handlers  handlers
 	enableAll bool
 }
 
-func getConnection(addr string) (*ChromeConnection, error) {
+//GetConnection returns connection to Chrome instance
+func GetConnection(addr string) (*chromeConnection, error) {
 	remote, err := godet.Connect(addr, false)
 	if err != nil {
 		return nil, err
 	}
-	c := ChromeConnection{remote: remote, handlers: make(handlers)}
+	c := chromeConnection{remote: remote, handlers: make(handlers)}
 	return &c, nil
 }
 
-func (cc *ChromeConnection) SetHandler(event string, handler handler) {
+// SetHandler adds handler to event in navigation
+func (cc *chromeConnection) SetHandler(event string, handler handler) {
 	if handler == nil {
 		delete(cc.handlers, event)
 		return
@@ -36,11 +37,12 @@ func (cc *ChromeConnection) SetHandler(event string, handler handler) {
 	}
 }
 
-func (cc *ChromeConnection) EnableAll(all bool) {
+// EnableAll enables all events in navigatetion
+func (cc *chromeConnection) EnableAll(all bool) {
 	cc.enableAll = all
 }
 
-func (cc *ChromeConnection) setEventListeners() {
+func (cc *chromeConnection) setEventListeners() {
 	if cc.remote == nil {
 		return
 	}
@@ -54,7 +56,7 @@ func (cc *ChromeConnection) setEventListeners() {
 	}
 	var err error
 
-	for k, _ := range m {
+	for k := range m {
 		switch k {
 		case "Runtime":
 			err = cc.remote.RuntimeEvents(true)
@@ -73,7 +75,8 @@ func (cc *ChromeConnection) setEventListeners() {
 	}
 }
 
-func (cc *ChromeConnection) Navigate(url string) {
+// Navigate open url in Chrome
+func (cc *chromeConnection) Navigate(url string) {
 	if cc.remote == nil {
 		return
 	}
@@ -87,7 +90,8 @@ func (cc *ChromeConnection) Navigate(url string) {
 	fmt.Printf("---> %v, %v\n", s, e)
 }
 
-func (cc *ChromeConnection) Close() {
+// Close connection to Chrome
+func (cc *chromeConnection) Close() {
 	if cc.remote == nil {
 		return
 	}
@@ -96,6 +100,7 @@ func (cc *ChromeConnection) Close() {
 	cc.handlers = nil
 }
 
+/*
 func main() {
 	host := flag.String("host", "localhost", "Host where remote debugger is running")
 	port := flag.Int("port", 9222, "Port where remote debugger is listening")
@@ -111,6 +116,8 @@ func main() {
 	if e != nil {
 		panic(e)
 	}
+
+	var id string
 
 	f := func(params godet.Params) {
 		p, ok := params["response"]
@@ -129,9 +136,7 @@ func main() {
 	r2.SetHandler("Network.responseReceived", f)
 
 	r1.Navigate("http://localhost:8080/hello")
-	time.Sleep(time.Second * 3)
-	r2.Navigate("localhost:8080/hello-R2")
-	time.Sleep(time.Second)
-	// r1.Navigate("http://localhost:8080/hello-2")
+
 	time.Sleep(time.Second * 5)
 }
+*/
